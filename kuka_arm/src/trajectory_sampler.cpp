@@ -285,9 +285,11 @@ TrajectorySampler::TrajectorySampler(ros::NodeHandle nh)
         for (std::size_t j = 0; j < srv.response.points[0].positions.size(); ++j)
         {
           robot_joint_positions[j] = srv.response.points[i].positions[j];  // radians
+          //ROS_INFO("Robot pos: %f", robot_joint_positions[j]);
         }
 
-        move_group.setJointValueTarget(robot_joint_positions);
+        bool setJoints = move_group.setJointValueTarget(robot_joint_positions);
+        ROS_INFO("Robot joints: %s", setJoints ? "SUCCEEDED" : "FAILED");
         bool worked = move_group.move();
         ROS_INFO("Robot actuation: %s", worked ? "SUCCEEDED" : "FAILED");
       }
