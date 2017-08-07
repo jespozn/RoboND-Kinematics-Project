@@ -77,12 +77,12 @@ def calculate_FK():
     T6_G = T6_G.subs(s)
 
     # Define Modified DH Transformation matrix
-    #T0_2 = simplify(T0_1 * T1_2)    # base_link to link_2
-    #T0_3 = simplify(T0_2 * T2_3)  # base_link to link_3
-    #T0_4 = simplify(T0_3 * T3_4)  # base_link to link_4
-    #T0_5 = simplify(T0_4 * T4_5)  # base_link to link_5
-    #T0_6 = simplify(T0_5 * T5_6)  # base_link to link_6
-    #T0_G = simplify(T0_6 * T6_G)  # base_link to gripper
+    T0_2 = simplify(T0_1 * T1_2)    # base_link to link_2
+    T0_3 = simplify(T0_2 * T2_3)  # base_link to link_3
+    T0_4 = simplify(T0_3 * T3_4)  # base_link to link_4
+    T0_5 = simplify(T0_4 * T4_5)  # base_link to link_5
+    T0_6 = simplify(T0_5 * T5_6)  # base_link to link_6
+    T0_G = simplify(T0_6 * T6_G)  # base_link to gripper
 
     # Gripper orientation correction
     R_z = Matrix([[    cos(np.pi),  -sin(np.pi),              0, 0],
@@ -97,17 +97,18 @@ def calculate_FK():
     R_corr = R_z * R_y
 
     # Total homogeneous transform
-    #T_total = simplify(T0_G * R_corr)
+    T_total = simplify(T0_G * R_corr)
 
     dict = {q1: sys.argv[1], q2: sys.argv[2], q3: sys.argv[3], q4: sys.argv[4], q5: sys.argv[5], q6: sys.argv[6]}
-    #print('T_total = ', T_total.evalf(subs=dict))
+    print('T_total = ', T_total.evalf(subs=dict))
     #print('T4_5 = ', T4_5)
     T4_G = simplify(T4_5 * T5_6 * T6_G)
     #print('T4_G = ', T4_G)
     #print('T4_G_corr = ', simplify(T4_G * R_corr))
-    R0_3 = simplify(T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3])
-    #print('R0_3 = ', R0_3)
-    R0_3 = R0_3.evalf(subs=dict)
+    #R0_3 = simplify(T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3])
+    #print('inv R0_3 = ', R0_3.inv("LU"))
+    #print('simple inv R0_3 = ', simplify(R0_3.inv("LU")))
+    #R0_3 = R0_3.evalf(subs=dict)
     #print('R0_3 eval = ', R0_3)
     #print('R0_3 = ', R0_3)
 
@@ -143,9 +144,9 @@ def calculate_FK():
     theta5 = atan2(sqrt(R3_6[0,0]*R3_6[0,0] + R3_6[2,0]*R3_6[2,0]), R3_6[1,0])
     theta6 = atan2(R3_6[1,1], R3_6[1,2] / sqrt(R3_6[0,0]*R3_6[0,0] + R3_6[2,0]*R3_6[2,0]))
 
-    print('t4 = ', theta4)
-    print('t5 = ', theta5)
-    print('t6 = ', theta6)
+    print('theta4 = ', theta4)
+    print('theta5 = ', theta5)
+    print('theta6 = ', theta6)
 
     return 0
 

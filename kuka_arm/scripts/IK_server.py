@@ -17,11 +17,12 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from geometry_msgs.msg import Pose
 from mpmath import *
 from sympy import *
+import numpy as np
 
 # Global variables
 FK_transform = None
 R_corr = None
-R0_3 = None
+inv_R0_3 = None
 
 def calculate_FK():
     # Joint angle symbols
@@ -77,12 +78,12 @@ def calculate_FK():
     T6_G = T6_G.subs(s)
 
     # Define Modified DH Transformation matrix
-    T0_2 = simplify(T0_1 * T1_2)    # base_link to link_2
-    T0_3 = simplify(T0_2 * T2_3)  # base_link to link_3
-    T0_4 = simplify(T0_3 * T3_4)  # base_link to link_4
-    T0_5 = simplify(T0_4 * T4_5)  # base_link to link_5
-    T0_6 = simplify(T0_5 * T5_6)  # base_link to link_6
-    T0_G = simplify(T0_6 * T6_G)  # base_link to gripper
+    T0_2 = T0_1 * T1_2    # base_link to link_2
+    T0_3 = T0_2 * T2_3  # base_link to link_3
+    T0_4 = T0_3 * T3_4  # base_link to link_4
+    T0_5 = T0_4 * T4_5  # base_link to link_5
+    T0_6 = T0_5 * T5_6  # base_link to link_6
+    T0_G = T0_6 * T6_G  # base_link to gripper
 
     # Gripper orientation correction
     R_z = Matrix([[    cos(np.pi),  -sin(np.pi),              0, 0],
@@ -97,16 +98,16 @@ def calculate_FK():
     R_corr = R_z * R_y
 
     # Total homogeneous transform
-    T_total = simplify(T0_G * R_corr)
+    T_total = T0_G * R_corr
     R0_3 = T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3]
-    R0_6 = R0_3*T3_4[0:3,0:3]*T4_5[0:3,0:3]*T5_6[0:3,0:3]
+    #R0_6 = R0_3*T3_4[0:3,0:3]*T4_5[0:3,0:3]*T5_6[0:3,0:3]
 
     #print('T0_1 = ', T0_1.evalf(subs={}))
 
-    return T_total, R_corr, R0_3
+    return T_total, R_corr
 
 def handle_calculate_IK(req):
-    global FK_transform, R_corr, R0_3
+    global FK_transform, R_corr
     rospy.loginfo("Received %s eef-poses from the plan" % len(req.poses))
     if len(req.poses) < 1:
         print "No valid poses received"
@@ -163,14 +164,18 @@ def handle_calculate_IK(req):
                           [          0, sin(roll),  cos(roll)]])
 
             Rrpy = R_z * R_y * R_x
-		    nx = Rrpy[0,2]
-            ny = Rrpy[1,2]
-            nz = Rrpy[2,2]
+            # nx = Rrpy[0,2]
+            # ny = Rrpy[1,2]
+            # nz = Rrpy[2,2]
+            nx = Rrpy[0,0]
+            ny = Rrpy[1,0]
+            nz = Rrpy[2,0]
+
 
             # Wrist position
-            wx = px - 0.303 * nx
-            wy = py - 0.303 * ny
-            wz = pz - 0.303 * nz
+            wx = px - (0.303 + 0.2) * nx
+            wy = py - (0.303 + 0.2) * ny
+            wz = pz - (0.303 + 0.2) * nz
 
             theta1 = atan2(wy, wx)
 
@@ -182,30 +187,45 @@ def handle_calculate_IK(req):
             C = 1.25
             angle_a = acos((C*C + B*B - A*A)/(2*C*B))
             angle_b = acos((A*A + C*C - B*B)/(2*A*C))
-            theta2 = np.pi/2 - angle_a - atan2(h, r)
 
+            theta2 = np.pi/2 - angle_a - atan2(h, r)
             theta3 = np.pi/2 - angle_b - atan2(0.054, 1.5)
 
             # Gripper orientation
-            R0_3.subs({q1: theta1, q2: theta2, q3: theta3})
+            q1 = theta1
+            q2 = theta2
+            q3 = theta3
+            inv_R0_3 = Matrix([
+                              [sin(q2 + q3) * cos(q1), sin(q1) * sin(q2 + q3),  cos(q2 + q3)],
+                              [cos(q1) * cos(q2 + q3), sin(q1) * cos(q2 + q3), -sin(q2 + q3)],
+                              [              -sin(q1),                cos(q1),             0]])
 
+            R3_6 = inv_R0_3 * Rrpy
+
+            theta4 = atan2(R3_6[2, 0], -R3_6[0, 0])
+            theta5 = atan2(sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0]), R3_6[1, 0])
+            theta6 = atan2(R3_6[1, 1], R3_6[1, 2] / sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0]))
 
             # Populate response for the IK request
             # In the next line replace theta1,theta2...,theta6 by your joint angle variables
-	        joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
-	        joint_trajectory_list.append(joint_trajectory_point)
+            joint_trajectory_point.positions = [theta1.evalf(), theta2.evalf(), theta3.evalf(),
+                                                theta4.evalf(), theta5.evalf(), theta6.evalf()]
+            joint_trajectory_list.append(joint_trajectory_point)
 
             rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
+
+        print('trajectory list: ', joint_trajectory_list)
         return CalculateIKResponse(joint_trajectory_list)
 
 
 def IK_server():
-    global FK_transform, R_corr
+    global FK_transform, R_corr, inv_R0_3
     # initialize node and declare calculate_ik service
     rospy.init_node('IK_server')
     s = rospy.Service('calculate_ik', CalculateIK, handle_calculate_IK)
     # Calculate transform matrix
-    FK_transform, R_corr, R0_3 = calculate_FK()
+    print('Calculating...')
+    FK_transform, R_corr = calculate_FK()
     print "Ready to receive an IK request"
     rospy.spin()
 
