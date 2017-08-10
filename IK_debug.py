@@ -139,7 +139,6 @@ def test_code(test_case):
     print('theta5 = ', theta5.evalf())
     print('theta6 = ', theta6.evalf())
 
->>>>>>> dev
     ########################################################################################
     
     ########################################################################################
@@ -283,6 +282,6 @@ def test_code(test_case):
 
 if __name__ == "__main__":
     # Change test case number for different scenarios
-    test_case_number = 1
+    test_case_number = 3
 
     test_code(test_cases[test_case_number])
