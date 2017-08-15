@@ -85,6 +85,7 @@ def calculate_FK():
     T0_G = simplify(T0_6 * T6_G)  # base_link to gripper
 
     # Gripper orientation correction
+    print('Gripper correction')
     R_z = Matrix([[    cos(np.pi),  -sin(np.pi),              0, 0],
                   [    sin(np.pi),   cos(np.pi),              0, 0],
                   [             0,            0,              1, 0],
@@ -98,22 +99,24 @@ def calculate_FK():
 
     # Total homogeneous transform
     T_total = simplify(T0_G * R_corr)
+    #print('T_total = ', T_total)
 
     dict = {q1: sys.argv[1], q2: sys.argv[2], q3: sys.argv[3], q4: sys.argv[4], q5: sys.argv[5], q6: sys.argv[6]}
     print('T_total = ', T_total.evalf(subs=dict))
     #print('T4_5 = ', T4_5)
     T4_G = simplify(T4_5 * T5_6 * T6_G)
-    #print('T4_G = ', T4_G)
-    #print('T4_G_corr = ', simplify(T4_G * R_corr))
-    #R0_3 = simplify(T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3])
+    print('T4_G = ', T4_G)
+    print('T4_G_corr = ', simplify(T4_G * R_corr))
+    R0_3 = simplify(T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3])
     #print('inv R0_3 = ', R0_3.inv("LU"))
-    #print('simple inv R0_3 = ', simplify(R0_3.inv("LU")))
+    print('simple inv R0_3 = ', simplify(R0_3.inv("LU")))
     #R0_3 = R0_3.evalf(subs=dict)
     #print('R0_3 eval = ', R0_3)
     #print('R0_3 = ', R0_3)
 
-    #R3_6 = simplify(T3_4[0:3,0:3]*T4_5[0:3,0:3]*T5_6[0:3,0:3]*R_corr[0:3,0:3])
-    #print('R3_6 = ', R3_6)
+    R3_6 = simplify(T3_4[0:3,0:3]*T4_5[0:3,0:3]*T5_6[0:3,0:3])
+    print('R3_6 = ', R3_6)
+    print('R3_6 corr = ', simplify(R3_6*R_corr[0:3,0:3]))
 
     yaw = sys.argv[4]
     pitch = sys.argv[5]

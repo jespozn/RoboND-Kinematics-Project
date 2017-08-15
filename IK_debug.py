@@ -130,8 +130,11 @@ def test_code(test_case):
     R3_6 = inv_R0_3 * Rrpy
 
     theta4 = atan2(R3_6[2, 0], -R3_6[0, 0])
-    theta5 = atan2(sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0]), R3_6[1, 0])
-    theta6 = atan2(R3_6[1, 1], R3_6[1, 2] / sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0]))
+    sin_beta = sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0])
+    if (-R3_6[0, 0] / cos(theta4)) < 0:
+        sin_beta = -sin_beta
+    theta5 = atan2(sin_beta, R3_6[1, 0])
+    theta6 = atan2(R3_6[1, 1], R3_6[1, 2] / sin_beta)
     print('theta1 = ', theta1.evalf())
     print('theta2 = ', theta2.evalf())
     print('theta3 = ', theta3.evalf())
