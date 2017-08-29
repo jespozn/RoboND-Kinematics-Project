@@ -97,7 +97,7 @@ def calculate_FK():
 
     # Total homogeneous transform
     T_total = T0_G * R_corr
-    R0_3 = T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3]
+    #R0_3 = T0_1[0:3,0:3]*T1_2[0:3,0:3]*T2_3[0:3,0:3]
     #R0_6 = R0_3*T3_4[0:3,0:3]*T4_5[0:3,0:3]*T5_6[0:3,0:3]
 
     #print('T_total = ', T_total.evalf())
@@ -180,20 +180,23 @@ def handle_calculate_IK(req):
                               [                -sin(qq1),                  cos(qq1),               0]])
 
             R3_6 = inv_R0_3 * Rrpy
-            print('R3_6', R3_6)
+            #print('R3_6', R3_6)
 
             theta4 = atan2(R3_6[2, 0], -R3_6[0, 0])
+            # Shortest rotation
             if x == 0:
                 theta4_prev = theta4
             if (theta4 - theta4_prev) > np.pi:
                 theta4 = theta4 - 2 * np.pi
             elif (theta4 - theta4_prev) < -np.pi:
                 theta4 = theta4 + 2 * np.pi
+            # Joint limits
             if theta4 > 6.109:
                 theta4 = theta4 - 2 * np.pi
             elif theta4 < -6.109:
                 theta4 = theta4 + 2 * np.pi
             theta4_prev = theta4
+            
             sin_beta = sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0])
             theta5 = atan2(sin_beta, R3_6[1, 0])
             # if x == 0:
@@ -204,12 +207,14 @@ def handle_calculate_IK(req):
             #     theta5 = theta5 + 2 * np.pi
             # theta5_prev = theta5
             theta6 = atan2(R3_6[1, 1], R3_6[1, 2] / sin_beta)
+            # Shortest rotation
             if x == 0:
                 theta6_prev = theta6
             if (theta6 - theta6_prev) > np.pi:
                 theta6 = theta6 - 2 * np.pi
             elif (theta6 - theta6_prev) < -np.pi:
                 theta6 = theta6 + 2 * np.pi
+            # Joint limits
             if theta6 > 6.109:
                 theta6 = theta6 - 2 * np.pi
             elif theta6 < -6.109:
@@ -222,26 +227,26 @@ def handle_calculate_IK(req):
             joint_trajectory_list.append(joint_trajectory_point)
 
             rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
-            print('positions: ', joint_trajectory_point.positions)
+            #print('positions: ', joint_trajectory_point.positions)
 
             ######################################################################################
             ## For additional debugging add your forward kinematics here. Use your previously calculated thetas
             ## as the input and output the position of your end effector as your_ee = [x,y,z]
 
-            # T_total = FK_transform.evalf(subs={q1: theta1, q2: theta2, q3: theta3,
-            #                                    q4: theta4, q5: theta5, q6: theta6})
-            # #print('T_total = ', T_total)
-            # your_ee = [T_total[0, 3], T_total[1, 3], T_total[2, 3]]
-            #
-            # # Errors
-            # ee_x_e = T_total[0, 3] - px
-            # ee_y_e = T_total[1, 3] - py
-            # ee_z_e = T_total[2, 3] - pz
-            # ee_offset = sqrt(ee_x_e ** 2 + ee_y_e ** 2 + ee_z_e ** 2)
-            # print('EEx error = %.8f' % ee_x_e)
-            # print('EEy error = %.8f' % ee_y_e)
-            # print('EEz error = %.8f' % ee_z_e)
-            # print('offset = %.8f' % ee_offset)
+            T_total = FK_transform.evalf(subs={q1: theta1, q2: theta2, q3: theta3,
+                                                q4: theta4, q5: theta5, q6: theta6})
+            #print('T_total = ', T_total)
+            your_ee = [T_total[0, 3], T_total[1, 3], T_total[2, 3]]
+            
+            # Errors
+            ee_x_e = T_total[0, 3] - px
+            ee_y_e = T_total[1, 3] - py
+            ee_z_e = T_total[2, 3] - pz
+            ee_offset = sqrt(ee_x_e ** 2 + ee_y_e ** 2 + ee_z_e ** 2)
+            print('EEx error = %.8f' % ee_x_e)
+            print('EEy error = %.8f' % ee_y_e)
+            print('EEz error = %.8f' % ee_z_e)
+            print('offset = %.8f' % ee_offset)
 
         #print('trajectory list: ', joint_trajectory_list)
         return CalculateIKResponse(joint_trajectory_list)
