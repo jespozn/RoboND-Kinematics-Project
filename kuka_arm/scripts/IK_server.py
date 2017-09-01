@@ -159,7 +159,7 @@ def handle_calculate_IK(req):
             theta1 = atan2(wy, wx)
 
             # Triangle for theta2 and theta3
-            r = sqrt(wx*wx + wy*wy) - 0.35
+            r = sqrt(wx*wx + wy*wy) - 0.35		# 
             h = wz - 0.75
             A = sqrt(1.5*1.5 + 0.054*0.054)
             B = sqrt(r*r + h*h)
@@ -199,15 +199,9 @@ def handle_calculate_IK(req):
             
             sin_beta = sqrt(R3_6[0, 0] * R3_6[0, 0] + R3_6[2, 0] * R3_6[2, 0])
             theta5 = atan2(sin_beta, R3_6[1, 0])
-            # if x == 0:
-            #     theta5_prev = theta5
-            # if (theta5 - theta5_prev) > np.pi:
-            #     theta5 = theta5 - 2 * np.pi
-            # elif (theta5 - theta5_prev) < -np.pi:
-            #     theta5 = theta5 + 2 * np.pi
-            # theta5_prev = theta5
+            
             theta6 = atan2(R3_6[1, 1], R3_6[1, 2] / sin_beta)
-            # Shortest rotation
+            	# Shortest rotation
             if x == 0:
                 theta6_prev = theta6
             if (theta6 - theta6_prev) > np.pi:
@@ -239,6 +233,7 @@ def handle_calculate_IK(req):
             your_ee = [T_total[0, 3], T_total[1, 3], T_total[2, 3]]
             
             # Errors
+            ## End effector position
             ee_x_e = T_total[0, 3] - px
             ee_y_e = T_total[1, 3] - py
             ee_z_e = T_total[2, 3] - pz
@@ -247,7 +242,10 @@ def handle_calculate_IK(req):
             print('EEy error = %.8f' % ee_y_e)
             print('EEz error = %.8f' % ee_z_e)
             print('offset = %.8f' % ee_offset)
-
+            # End effector rotation
+            R0_6 = T_total[0:3,0:3]
+            R_e = R0_6 - Rrpy
+            print('Rotational matrix error = %.8f' % R_e)
         #print('trajectory list: ', joint_trajectory_list)
         return CalculateIKResponse(joint_trajectory_list)
 
