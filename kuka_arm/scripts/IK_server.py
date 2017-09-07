@@ -159,16 +159,19 @@ def handle_calculate_IK(req):
             theta1 = atan2(wy, wx)
 
             # Triangle for theta2 and theta3
-            r = sqrt(wx*wx + wy*wy) - 0.35		# 
-            h = wz - 0.75
-            A = sqrt(1.5*1.5 + 0.054*0.054)
+            # cylindrical coords
+            r = sqrt(wx*wx + wy*wy) - 0.35		# r = sqrt(wx^2 + wy^2) - a1
+            h = wz - 0.75						# h = wz - d1
+            # sides of the triangle
+            A = sqrt(1.5*1.5 + 0.054*0.054)     # A = sqrt(d4^2 + a3^2), distance from joint 3 to joint 4
             B = sqrt(r*r + h*h)
-            C = 1.25
-            angle_a = acos((C*C + B*B - A*A)/(2*C*B))
-            angle_b = acos((A*A + C*C - B*B)/(2*A*C))
+            C = 1.25						    # C = a2
+            # cosine law
+            angle_a = acos((C*C + B*B - A*A)/(2*C*B))  # angle between B and C
+            angle_b = acos((A*A + C*C - B*B)/(2*A*C))  # angle between A and C
 
-            theta2 = np.pi/2 - angle_a - atan2(h, r)
-            theta3 = np.pi/2 - angle_b - atan2(0.054, 1.5)
+            theta2 = np.pi/2 - angle_a - atan2(h, r)   # atan2(h, r), angle between B and r
+            theta3 = np.pi/2 - angle_b - atan2(0.054, 1.5)  # atan2(a3, d4), angle between d4 and A
 
             # Gripper orientation
             qq1 = theta1
@@ -245,7 +248,7 @@ def handle_calculate_IK(req):
             # End effector rotation
             R0_6 = T_total[0:3,0:3]
             R_e = R0_6 - Rrpy
-            print('Rotational matrix error = %.8f' % R_e)
+            print('Rotational matrix error = ', R_e)
         #print('trajectory list: ', joint_trajectory_list)
         return CalculateIKResponse(joint_trajectory_list)
 
